@@ -1,4 +1,5 @@
 import random
+import sys
 
 """
 Implementing one time truth table for blood type compatibility:
@@ -6,6 +7,18 @@ Implementing one time truth table for blood type compatibility:
     B : b1 b2 b3
     OUTPUT: A or (not B)
 """
+
+# Blood types in the order used by the rows/columns of the truth table.
+BLOOD_TYPES = {
+    "O-": 0,
+    "O+": 1,
+    "A-": 2,
+    "A+": 3,
+    "B-": 4,
+    "B+": 5,
+    "AB-": 6,
+    "AB+": 7,
+}
 
 
 class Dealer:
@@ -90,32 +103,40 @@ class Alice:
 
 
 def convert(blood_type):
-    blood_type_map = {
-        "O-": 0,
-        "O+": 1,
-        "A-": 2,
-        "A+": 3,
-        "B-": 4,
-        "B+": 5,
-        "AB-": 6,
-        "AB+": 7,
-    }
-    return blood_type_map[blood_type]
+    return BLOOD_TYPES[blood_type]
+
+
+def main(recipient="A+", donor="O-"):
+    """Run the protocol once and return the output bit.
+
+    ``recipient`` is Alice's private input and ``donor`` is Bob's private
+    input; the protocol outputs 1 when the donor's blood can be given to the
+    recipient.
+    """
+    x, y = convert(recipient), convert(donor)
+    dealer = Dealer()
+    alice = Alice()
+    bob = Bob()
+    alice.Init(x, dealer.RandA())
+    bob.Init(y, dealer.RandB())
+    bob.Receive(alice.Send())
+    alice.Receive(bob.Send())
+    z = alice.Output()
+    ostring = "compatible, i.e. B can donate to A" if z == 1 else "not compatible"
+    print(f"The two blood types are {ostring}")
+    return z
 
 
 if __name__ == "__main__":
-    # x, y = input("Enter two blood types separated by space (e.g., A+ B-):").split()
-    x, y = "A+", "O-"
-    # convert blood type to index
-    x = convert(x)
-    y = convert(y)
-    Dealer = Dealer()
-    Alice = Alice()
-    Bob = Bob()
-    Alice.Init(x, Dealer.RandA())
-    Bob.Init(y, Dealer.RandB())
-    Bob.Receive(Alice.Send())
-    Alice.Receive(Bob.Send())
-    z = Alice.Output()
-    ostring = "compatible, i.e. B can donate to A" if z == 1 else "not compatible"
-    print(f"The two blood types are {ostring}")
+    if len(sys.argv) == 1:
+        main()
+    elif len(sys.argv) == 3:
+        try:
+            main(sys.argv[1], sys.argv[2])
+        except KeyError as exc:
+            valid = ", ".join(BLOOD_TYPES)
+            raise SystemExit(
+                f"unknown blood type {exc.args[0]!r}\nexpected one of: {valid}"
+            ) from None
+    else:
+        raise SystemExit(f"usage: {sys.argv[0]} [RECIPIENT DONOR]")
