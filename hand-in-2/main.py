@@ -58,15 +58,12 @@ class Dealer:
 
 
 class Bob:
-    def __init__(self):
-        self.y = None
-        self.u = None
-
-    def Init(self, y, rand_b):
+    def __init__(self, y, rand_b):
         self.y = y
         matB, s = rand_b
         self.s = s
         self.matB = matB
+        self.u = None
 
     def Send(self):
         # send v, matB[u][v=y+s]  // u = r + x
@@ -78,17 +75,14 @@ class Bob:
 
 
 class Alice:
-    def __init__(self):
-        self.x = None
+    def __init__(self, x, randA):
+        self.x = x
+        matA, r = randA
+        self.r = r
+        self.matA = matA
         self.u = None
         self.v = None
         self.zb = None
-
-    def Init(self, x, randA):
-        matA, r = randA
-        self.x = x
-        self.r = r
-        self.matA = matA
 
     def Send(self):
         self.u = (self.r + self.x) % 8
@@ -115,10 +109,8 @@ def main(recipient="A+", donor="O-"):
     """
     x, y = convert(recipient), convert(donor)
     dealer = Dealer()
-    alice = Alice()
-    bob = Bob()
-    alice.Init(x, dealer.RandA())
-    bob.Init(y, dealer.RandB())
+    alice = Alice(x, dealer.RandA())
+    bob = Bob(y, dealer.RandB())
     bob.Receive(alice.Send())
     alice.Receive(bob.Send())
     z = alice.Output()

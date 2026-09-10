@@ -79,10 +79,8 @@ def run_protocol(x, y, seed=SEED):
     """
     random.seed(seed)
     dealer = main.Dealer()
-    alice = main.Alice()
-    bob = main.Bob()
-    alice.Init(x, dealer.RandA())
-    bob.Init(y, dealer.RandB())
+    alice = main.Alice(x, dealer.RandA())
+    bob = main.Bob(y, dealer.RandB())
     bob.Receive(alice.Send())
     alice.Receive(bob.Send())
     return dealer, alice, bob, alice.Output()

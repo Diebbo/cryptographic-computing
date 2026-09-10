@@ -1,11 +1,11 @@
 # Hand in 2 — One-time truth table for blood type compatibility
 
+**Diego Barbieri au802245 - Gioele Scandaletti au803277**
+
 A two-party protocol in which Alice and Bob each hold a blood type and learn
 only whether one can donate to the other — without revealing their own blood
 type. The compatibility function is a 8×8 truth table, so it is evaluated with
 the **one-time truth table** (oblivious transfer style) construction.
-
-See [`notes.md`](notes.md) for the design notes.
 
 ## Requirements
 
@@ -81,16 +81,7 @@ hands out:
      = M[x][y]
    ```
 
-Bob sends exactly one bit of the mask — the one entry Alice needs — so Alice
-learns the single table cell `M[x][y]` and nothing else about the table or
-about `y`. In this implementation only Alice computes the result: after the
-run, Bob knows neither the answer nor Alice's blood type.
+Bob sends exactly one bit of the mask — the one entry Alice needs — so Alice learns the single table cell `M[x][y]` and nothing else about the table or about `y`. In this implementation only Alice computes the result: after the run, Bob knows neither the answer nor Alice's blood type.
 
-## Files
-
-| File | Purpose |
-| --- | --- |
-| `main.py` | the p rotocol: `Dealer`, `Alice`, `Bob`, `convert`, `main()` and the CLI |
-| `test_main.py` | the test suite |
-| `notes.md` | implementation/design notes for the hand-in |
-
+## AI usage declaration
+AI (Gemini) has been used only for the purposes of writing this README file and generating the unit testing (not in the file `main.py`).
