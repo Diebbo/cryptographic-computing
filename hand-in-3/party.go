@@ -17,7 +17,7 @@ func NewParty(name string, isAlice bool) *Party {
 	}
 }
 
-// PrepareMult is phase 1 of Beaver multiplication — purely local. The returned
+// PrepareMult is phase 1 of the multiplication — purely local. The returned
 // (d, e) must be opened with the other party before phase 2.
 func (p *Party) PrepareMult(t MultShare, xShare, yShare bool) (d, e bool) {
 	// u and v are given in the multishare
@@ -32,4 +32,32 @@ func (p *Party) PrepareMult(t MultShare, xShare, yShare bool) (d, e bool) {
 func (p *Party) FinishMult(t MultShare, d, e, xShare, yShare bool) bool {
 	// [z] = [w]+e[x]+d[y]−de
 	return t.w != (e && xShare) != (d && yShare) != (d && e)
+}
+
+func (p *Party) Xor(ID, LeftID, RightID int) {
+	p.shares[ID] = p.shares[LeftID] != p.shares[RightID]
+}
+
+func (p *Party) XorConst(ID, LeftID int, Value bool) {
+	p.shares[ID] = p.shares[LeftID] != Value
+}
+
+func (p *Party) AndConst(ID, LeftID int, Value bool) {
+	p.shares[ID] = p.shares[LeftID] && Value
+}
+
+func (p *Party) Const(ID int, Value bool) {
+	p.shares[ID] = Value
+}
+
+func (p *Party) SendOutputShare(ID int) bool {
+	return p.shares[ID]
+}
+
+func (p *Party) SendOutput(ID int) bool {
+	return p.shares[ID]
+}
+
+func (p *Party) ReceiveOutputShare(ID int, Value bool) {
+	p.shares[ID] = p.shares[ID] != Value
 }

@@ -29,7 +29,7 @@ func InitInputs(alice, bob *Party,
 // Walks the DAG once and returns both parties' shares of the node's value.
 // Memoised in each party's `shares` map, so shared subexpressions are
 // evaluated (and charged a triple) only once.
-func EvalNode(alice, bob *Party, n *Node) (shareA, shareB bool) {
+func EvalNode(alice, bob *Party, n *Node) {
 	// recursively check left and right and then eval current
 	if n == nil {
 		panic("EvalNode: nil node")
@@ -41,20 +41,23 @@ func EvalNode(alice, bob *Party, n *Node) (shareA, shareB bool) {
 	switch n.Op {
 	case InputA:
 	case InputB:
-		return alice.shares[n.ID], bob.shares[n.ID]
 	case ConstGate:
-		return n.ConstVal, n.ConstVal
+		alice.Const(n.ID, n.ConstVal)
+		bob.Const(n.ID, n.ConstVal)
 	case Xor:
-		return alice.shares[n.L.ID] != bob.shares[n.R.ID], bob.shares[n.L.ID] != alice.shares[n.R.ID]
+		alice.Xor(n.ID, n.L.ID, n.R.ID)
+		bob.Xor(n.ID, n.L.ID, n.R.ID)
 	case XorConst:
-		return alice.shares[n.L.ID] != n.ConstVal, bob.shares[n.L.ID] != n.ConstVal
+		// only Alice xor with the const value, Bob xor with false
+		alice.XorConst(n.ID, n.L.ID, n.ConstVal)
+		bob.XorConst(n.ID, n.L.ID, false)
 	case And:
-		return evalAndGate(alice, bob, n)
+		evalAndGate(alice, bob, n)
 	}
 	panic(fmt.Sprintf("EvalNode: unknown gate %v", n.Op))
 }
 
-func evalAndGate(alice, bob *Party, n *Node) (bool, bool) {
+func evalAndGate(alice, bob *Party, n *Node) {
 	// 1. get random values from dealer
 	var tripleAlice, tripleBob MultShare
 	tripleAlice, tripleBob = dealer.GiveMultTriple()
@@ -64,7 +67,9 @@ func evalAndGate(alice, bob *Party, n *Node) (bool, bool) {
 	// 3. secretly open d and e (in this simplified setting, just exchange them)
 	zA := alice.FinishMult(tripleAlice, aD, bE, alice.shares[n.L.ID], alice.shares[n.R.ID])
 	zB := bob.FinishMult(tripleBob, bD, aE, bob.shares[n.L.ID], bob.shares[n.R.ID])
-	return zA, zB
+
+	alice.shares[n.ID] = zA
+	bob.shares[n.ID] = zB
 }
 
 // plaintextCompat is the ground truth for the target function: the AND over all

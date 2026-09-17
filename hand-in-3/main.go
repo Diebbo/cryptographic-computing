@@ -15,8 +15,9 @@ func main() {
 	InitInputs(alice, bob, aliceShares, aliceBits, bobShares, bobBits)
 
 	circuit := BuildCompatibility(aliceShares, bobShares)
-
-	outputA, outputB := EvalNode(alice, bob, circuit)
+	outputID := circuit.ID
+	EvalNode(alice, bob, circuit)
+	alice.ReceiveOutputShare(outputID, bob.SendOutputShare(outputID))
+	outputA := alice.SendOutput(outputID)
 	fmt.Printf("Alice's share: %v\n", outputA)
-	fmt.Printf("Bob's share: %v\n", outputB)
 }
