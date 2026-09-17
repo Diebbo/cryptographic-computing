@@ -10,7 +10,7 @@ func main() {
 	bobShares := []*Node{InputANode(3), InputANode(4), InputANode(5)}
 
 	aliceBits := []bool{true, true, true}
-	bobBits := []bool{true, true, true}
+	bobBits := []bool{false, false, false}
 
 	InitInputs(alice, bob, aliceShares, aliceBits, bobShares, bobBits)
 

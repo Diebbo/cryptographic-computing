@@ -17,16 +17,58 @@ func InitInputs(alice, bob *Party,
 	for i, bit := range x {
 		// NOTE: this operatio is supposed to be done by the player, for
 		// practicality we will assume the dealer is honest
-		mask := dealer.GiveInputMask()
-		alice.shares[xNodes[i].ID] = mask
-		bob.shares[xNodes[i].ID] = bit != mask
+		a, b := dealer.split(bit)
+		fmt.Printf("InitInputs: x[%d] = %v, Alice share = %v, Bob share = %v\n", i, bit, a, b)
+		alice.shares[xNodes[i].ID] = a
+		bob.shares[xNodes[i].ID] = b
 	}
 
 	for j, bit := range y {
-		mask := dealer.GiveInputMask()
-		alice.shares[xNodes[j].ID] = bit != mask
-		bob.shares[xNodes[j].ID] = mask
+		a, b := dealer.split(bit)
+		fmt.Printf("InitInputs: y[%d] = %v, Alice share = %v, Bob share = %v\n", j, bit, a, b)
+		alice.shares[yNodes[j].ID] = a
+		bob.shares[yNodes[j].ID] = b
 	}
+}
+
+// DebugEval turns the per-node trace on and off. It is on by default: when this
+// protocol misbehaves, the only question worth asking is which wire diverged,
+// and each printed line is exactly one wire. Only the tests, which call
+// evalPlain and never EvalNode, are unaffected by it.
+var DebugEval = true
+
+// debugNode reports one wire after it has been evaluated: the gate that produced
+// it, both parties' shares, and the value they reconstruct to (shareA xor
+// shareB — the value a correctly implemented "open" would yield).
+//
+// It also flags a node whose share is missing from a party's map. That case is
+// worth shouting about because a missing key reads back as false, i.e. it looks
+// like a perfectly good wire carrying 0.
+func debugNode(n *Node, alice, bob *Party) {
+	if !DebugEval {
+		return
+	}
+
+	a, aOK := alice.shares[n.ID]
+	b, bOK := bob.shares[n.ID]
+
+	// Leaves carry no operand information in their children, so spell out the
+	// field that actually determines them.
+	detail := ""
+	switch n.Op {
+	case InputA, InputB:
+		detail = fmt.Sprintf("(input %d)  ", n.InputIdx)
+	case ConstGate, XorConst, AndConst:
+		detail = fmt.Sprintf("(const %v)  ", n.ConstVal)
+	}
+
+	warn := ""
+	if !aOK || !bOK {
+		warn = fmt.Sprintf("  <-- NO SHARE (A set=%v, B set=%v)", aOK, bOK)
+	}
+
+	fmt.Printf("[eval] node %2d  %-9s %sA=%v B=%v  value=%v%s\n",
+		n.ID, n.Op, detail, a, b, a != b, warn)
 }
 
 // Walks the DAG once and returns both parties' shares of the node's value.
@@ -53,6 +95,7 @@ func EvalNode(alice, bob *Party, n *Node) error {
 	switch n.Op {
 	case InputA, InputB:
 		// leaf: value already set during InitInputs, nothing to eval
+		debugNode(n, alice, bob)
 		return nil
 	case ConstGate:
 		alice.Const(n.ID, n.ConstVal)
@@ -72,6 +115,7 @@ func EvalNode(alice, bob *Party, n *Node) error {
 		return fmt.Errorf("EvalNode: unknown gate %v", n.Op)
 	}
 
+	debugNode(n, alice, bob)
 	return nil
 }
 
@@ -87,6 +131,8 @@ func evalAndGate(alice, bob *Party, n *Node) error {
 	aD, aE := alice.PrepareMult(tripleAlice, alice.shares[n.L.ID], alice.shares[n.R.ID])
 	bD, bE := bob.PrepareMult(tripleBob, bob.shares[n.L.ID], bob.shares[n.R.ID])
 
+	debugAnd(alice, bob, n, tripleAlice, tripleBob, aD, bD, aE, bE)
+
 	// 3. secretly open d and e (in this simplified setting, just exchange them)
 	zA := alice.FinishMult(tripleAlice, aD, bE, alice.shares[n.L.ID], alice.shares[n.R.ID])
 	zB := bob.FinishMult(tripleBob, bD, aE, bob.shares[n.L.ID], bob.shares[n.R.ID])
@@ -94,6 +140,42 @@ func evalAndGate(alice, bob *Party, n *Node) error {
 	alice.shares[n.ID] = zA
 	bob.shares[n.ID] = zB
 	return nil
+}
+
+// debugAnd traces one Beaver multiplication: the triple the dealer handed out
+// (reconstructed from the two shares, which is what the protocol actually sees)
+// and the d and e the parties open from it.
+//
+// Two checks run alongside the printout, because both failures are silent
+// otherwise — the gate still produces two shares that look plausible:
+//
+//   - the triple must satisfy c == a AND b, or the Beaver identity is wrong;
+//   - the opened d and e must equal x xor a and y xor b, or a blind was applied
+//     to the wrong operand.
+//
+// It cannot check the property that actually breaks security here: a, b, c must
+// be *random*, so a triple reconstructed as a=b=c=1 on every call is a leak
+// (the opened d, e are then just x and y).
+func debugAnd(alice, bob *Party, n *Node, tA, tB MultShare, aD, bD, aE, bE bool) {
+	if !DebugEval {
+		return
+	}
+
+	a, b, c := tA.u != tB.u, tA.v != tB.v, tA.w != tB.w
+	x := alice.shares[n.L.ID] != bob.shares[n.L.ID]
+	y := alice.shares[n.R.ID] != bob.shares[n.R.ID]
+	d, e := aD != bD, aE != bE
+
+	fmt.Printf("[and ] node %2d  triple(a=%v b=%v c=%v)  d=%v e=%v   shares A(u=%v v=%v w=%v) B(u=%v v=%v w=%v)\n",
+		n.ID, a, b, c, d, e, tA.u, tA.v, tA.w, tB.u, tB.v, tB.w)
+
+	if c != (a && b) {
+		fmt.Printf("[and ] node %2d  BROKEN TRIPLE: c=%v, want a AND b = %v\n", n.ID, c, a && b)
+	}
+	if d != (x != a) || e != (y != b) {
+		fmt.Printf("[and ] node %2d  BROKEN BLIND: d=%v (want x xor a = %v), e=%v (want y xor b = %v)  [x=%v y=%v]\n",
+			n.ID, d, x != a, e, y != b, x, y)
+	}
 }
 
 // plaintextCompat is the ground truth for the target function: the AND over all

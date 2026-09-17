@@ -27,7 +27,11 @@ func (d *Dealer) randBit() bool {
 
 // split returns two bits whose XOR is v.
 func (d *Dealer) split(v bool) (sA, sB bool) {
-	panic("TODO: Dealer.split")
+	mask := d.randBit()
+	if v {
+		return mask, !mask
+	}
+	return mask, mask
 }
 
 // GiveInputMask returns the mask used to secret-share one input bit.
@@ -39,8 +43,7 @@ func (d *Dealer) GiveInputMask() bool {
 // w = u AND v, itself XOR-shared between them. Call it once per AND gate.
 func (d *Dealer) GiveMultTriple() (alice, bob MultShare) {
 	var u, v, w bool
-	u = d.randBit()
-	v = d.randBit()
-	w = u && v
+	w = d.randBit()
+	u, v = d.split(w)
 	return MultShare{u, v, w}, MultShare{!u, !v, !w}
 }
