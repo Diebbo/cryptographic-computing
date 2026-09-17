@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // Each input bit is masked with a dealer bit: the owner keeps the mask as
 // its share, the other party receives (bit xor mask).
@@ -29,18 +32,28 @@ func InitInputs(alice, bob *Party,
 // Walks the DAG once and returns both parties' shares of the node's value.
 // Memoised in each party's `shares` map, so shared subexpressions are
 // evaluated (and charged a triple) only once.
-func EvalNode(alice, bob *Party, n *Node) {
-	// recursively check left and right and then eval current
+func EvalNode(alice, bob *Party, n *Node) error {
 	if n == nil {
-		panic("EvalNode: nil node")
+		return errors.New("EvalNode: nil node")
 	}
-	// recurr on Node's left and right children if they exist
-	EvalNode(alice, bob, n.L)
-	EvalNode(alice, bob, n.R)
+
+	// Leaves (InputA/InputB) have nil children, so only recurse if a
+	// child actually exists.
+	if n.L != nil {
+		if err := EvalNode(alice, bob, n.L); err != nil {
+			return err
+		}
+	}
+	if n.R != nil {
+		if err := EvalNode(alice, bob, n.R); err != nil {
+			return err
+		}
+	}
 
 	switch n.Op {
-	case InputA:
-	case InputB:
+	case InputA, InputB:
+		// leaf: value already set during InitInputs, nothing to eval
+		return nil
 	case ConstGate:
 		alice.Const(n.ID, n.ConstVal)
 		bob.Const(n.ID, n.ConstVal)
@@ -48,28 +61,39 @@ func EvalNode(alice, bob *Party, n *Node) {
 		alice.Xor(n.ID, n.L.ID, n.R.ID)
 		bob.Xor(n.ID, n.L.ID, n.R.ID)
 	case XorConst:
-		// only Alice xor with the const value, Bob xor with false
+		// only Alice xors with the const value, Bob xors with false
 		alice.XorConst(n.ID, n.L.ID, n.ConstVal)
 		bob.XorConst(n.ID, n.L.ID, false)
 	case And:
-		evalAndGate(alice, bob, n)
+		if err := evalAndGate(alice, bob, n); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("EvalNode: unknown gate %v", n.Op)
 	}
-	panic(fmt.Sprintf("EvalNode: unknown gate %v", n.Op))
+
+	return nil
 }
 
-func evalAndGate(alice, bob *Party, n *Node) {
+func evalAndGate(alice, bob *Party, n *Node) error {
+	if n.L == nil || n.R == nil {
+		return fmt.Errorf("evalAndGate: And node %v missing child", n.ID)
+	}
+
 	// 1. get random values from dealer
-	var tripleAlice, tripleBob MultShare
-	tripleAlice, tripleBob = dealer.GiveMultTriple()
+	tripleAlice, tripleBob := dealer.GiveMultTriple()
+
 	// 2. precompute d and e
 	aD, aE := alice.PrepareMult(tripleAlice, alice.shares[n.L.ID], alice.shares[n.R.ID])
 	bD, bE := bob.PrepareMult(tripleBob, bob.shares[n.L.ID], bob.shares[n.R.ID])
+
 	// 3. secretly open d and e (in this simplified setting, just exchange them)
 	zA := alice.FinishMult(tripleAlice, aD, bE, alice.shares[n.L.ID], alice.shares[n.R.ID])
 	zB := bob.FinishMult(tripleBob, bD, aE, bob.shares[n.L.ID], bob.shares[n.R.ID])
 
 	alice.shares[n.ID] = zA
 	bob.shares[n.ID] = zB
+	return nil
 }
 
 // plaintextCompat is the ground truth for the target function: the AND over all

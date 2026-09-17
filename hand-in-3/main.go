@@ -9,14 +9,16 @@ func main() {
 	aliceShares := []*Node{InputANode(0), InputANode(1), InputANode(2)}
 	bobShares := []*Node{InputANode(3), InputANode(4), InputANode(5)}
 
-	aliceBits := []bool{true, false, true}
-	bobBits := []bool{false, true, false}
+	aliceBits := []bool{true, true, true}
+	bobBits := []bool{true, true, true}
 
 	InitInputs(alice, bob, aliceShares, aliceBits, bobShares, bobBits)
 
 	circuit := BuildCompatibility(aliceShares, bobShares)
 	outputID := circuit.ID
-	EvalNode(alice, bob, circuit)
+	if err := EvalNode(alice, bob, circuit); err != nil {
+		panic(err)
+	}
 	alice.ReceiveOutputShare(outputID, bob.SendOutputShare(outputID))
 	outputA := alice.SendOutput(outputID)
 	fmt.Printf("Alice's share: %v\n", outputA)
