@@ -123,7 +123,7 @@ func OrGate(a, b *Node) *Node {
 //	= (x xor y xor 1) xor (x and (y xor 1))
 func OrNotGate(x, y *Node) *Node {
 	notY := XorConstGate(y, true)
-	return XorGate(XorGate(XorGate(x, y), ConstNode(true)), AndGate(x, notY))
+	return OrGate(x, notY)
 }
 
 // BuildCompatibility wires up the target function: the AND over all bit
