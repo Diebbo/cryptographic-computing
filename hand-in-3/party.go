@@ -6,15 +6,13 @@ package main
 type Party struct {
 	Name    string
 	IsAlice bool
-	dealer  *Dealer
 	shares  map[int]bool
 }
 
-func NewParty(name string, isAlice bool, dealer *Dealer) *Party {
+func NewParty(name string, isAlice bool) *Party {
 	return &Party{
 		Name:    name,
 		IsAlice: isAlice,
-		dealer:  dealer,
 		shares:  make(map[int]bool),
 	}
 }

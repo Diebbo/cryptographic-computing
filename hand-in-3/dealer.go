@@ -15,8 +15,10 @@ type Dealer struct {
 	rng *rand.Rand
 }
 
-func NewDealer(seed int64) *Dealer {
-	return &Dealer{rng: rand.New(rand.NewSource(seed))}
+var dealer *Dealer
+
+func initDealer(seed int64) {
+	dealer = &Dealer{rng: rand.New(rand.NewSource(seed))}
 }
 
 func (d *Dealer) randBit() bool {

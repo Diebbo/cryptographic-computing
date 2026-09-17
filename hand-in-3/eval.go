@@ -4,7 +4,7 @@ import "fmt"
 
 // Each input bit is masked with a dealer bit: the owner keeps the mask as
 // its share, the other party receives (bit xor mask).
-func InitInputs(alice, bob *Party, dealer *Dealer,
+func InitInputs(alice, bob *Party,
 	xNodes []*Node, x []bool, yNodes []*Node, y []bool,
 ) {
 	if len(xNodes) != len(x) || len(yNodes) != len(y) {
@@ -12,9 +12,17 @@ func InitInputs(alice, bob *Party, dealer *Dealer,
 	}
 
 	for i, bit := range x {
+		// NOTE: this operatio is supposed to be done by the player, for
+		// practicality we will assume the dealer is honest
 		mask := dealer.GiveInputMask()
 		alice.shares[xNodes[i].ID] = mask
 		bob.shares[xNodes[i].ID] = bit != mask
+	}
+
+	for j, bit := range y {
+		mask := dealer.GiveInputMask()
+		alice.shares[xNodes[j].ID] = bit != mask
+		bob.shares[xNodes[j].ID] = mask
 	}
 }
 
@@ -49,7 +57,7 @@ func EvalNode(alice, bob *Party, n *Node) (shareA, shareB bool) {
 func evalAndGate(alice, bob *Party, n *Node) (bool, bool) {
 	// 1. get random values from dealer
 	var tripleAlice, tripleBob MultShare
-	tripleAlice, tripleBob = alice.dealer.GiveMultTriple()
+	tripleAlice, tripleBob = dealer.GiveMultTriple()
 	// 2. precompute d and e
 	aD, aE := alice.PrepareMult(tripleAlice, alice.shares[n.L.ID], alice.shares[n.R.ID])
 	bD, bE := bob.PrepareMult(tripleBob, bob.shares[n.L.ID], bob.shares[n.R.ID])

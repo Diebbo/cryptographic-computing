@@ -3,12 +3,18 @@ package main
 import "fmt"
 
 func main() {
-	alice := NewParty("Alice", true, NewDealer(42))
-	bob := NewParty("Bob", true, NewDealer(42))
-	aliceBits := []*Node{InputANode(0), InputANode(1), InputANode(0)}
-	bobBits := []*Node{InputANode(0), InputANode(1), InputANode(0)}
+	initDealer(42)
+	alice := NewParty("Alice", true)
+	bob := NewParty("Bob", true)
+	aliceShares := []*Node{InputANode(0), InputANode(1), InputANode(2)}
+	bobShares := []*Node{InputANode(3), InputANode(4), InputANode(5)}
 
-	circuit := BuildCompatibility(aliceBits, bobBits)
+	aliceBits := []bool{true, false, true}
+	bobBits := []bool{false, true, false}
+
+	InitInputs(alice, bob, aliceShares, aliceBits, bobShares, bobBits)
+
+	circuit := BuildCompatibility(aliceShares, bobShares)
 
 	outputA, outputB := EvalNode(alice, bob, circuit)
 	fmt.Printf("Alice's share: %v\n", outputA)
