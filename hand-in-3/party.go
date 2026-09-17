@@ -11,17 +11,27 @@ type Party struct {
 }
 
 func NewParty(name string, isAlice bool, dealer *Dealer) *Party {
-	panic("TODO: NewParty")
+	return &Party{
+		Name:    name,
+		IsAlice: isAlice,
+		dealer:  dealer,
+		shares:  make(map[int]bool),
+	}
 }
 
 // PrepareMult is phase 1 of Beaver multiplication — purely local. The returned
 // (d, e) must be opened with the other party before phase 2.
 func (p *Party) PrepareMult(t MultShare, xShare, yShare bool) (d, e bool) {
-	panic("TODO: Party.PrepareMult")
+	// u and v are given in the multishare
+	// [d] = [x] + [u], [e] = [y] + [v], where + is sum mod 2
+	d = t.u != xShare
+	e = t.v != yShare
+	return d, e
 }
 
 // FinishMult is phase 2 — purely local, run once d and e are open.
 // addCrossTerm must be true for exactly one of the two parties.
-func (p *Party) FinishMult(t MultShare, d, e bool, addCrossTerm bool) bool {
-	panic("TODO: Party.FinishMult")
+func (p *Party) FinishMult(t MultShare, d, e, xShare, yShare bool) bool {
+	// [z] = [w]+e[x]+d[y]−de
+	return t.w != (e && xShare) != (d && yShare) != (d && e)
 }
