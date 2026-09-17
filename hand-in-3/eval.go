@@ -35,7 +35,7 @@ func InitInputs(alice, bob *Party,
 // protocol misbehaves, the only question worth asking is which wire diverged,
 // and each printed line is exactly one wire. Only the tests, which call
 // evalPlain and never EvalNode, are unaffected by it.
-var DebugEval = true
+var DebugEval = false
 
 // debugNode reports one wire after it has been evaluated: the gate that produced
 // it, both parties' shares, and the value they reconstruct to (shareA xor
@@ -90,6 +90,15 @@ func EvalNode(alice, bob *Party, n *Node) error {
 		if err := EvalNode(alice, bob, n.R); err != nil {
 			return err
 		}
+	}
+
+	// add memoization: if the node has already been evaluated, return early
+	if _, ok := alice.shares[n.ID]; ok {
+		if _, ok := bob.shares[n.ID]; !ok {
+			return fmt.Errorf("EvalNode: Alice has share for node %d but Bob does not", n.ID)
+		}
+		debugNode(n, alice, bob)
+		return nil
 	}
 
 	switch n.Op {
