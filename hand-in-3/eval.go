@@ -15,8 +15,6 @@ func InitInputs(alice, bob *Party,
 	}
 
 	for i, bit := range x {
-		// NOTE: this operatio is supposed to be done by the player, for
-		// practicality we will assume the dealer is honest
 		a, b := alice.split(bit)
 		fmt.Printf("InitInputs: x[%d] = %v, Alice share = %v, Bob share = %v\n", i, bit, a, b)
 		alice.shares[xNodes[i].ID] = a
