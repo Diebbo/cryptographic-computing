@@ -114,6 +114,9 @@ func EvalNode(alice, bob *Party, n *Node) error {
 		// only Alice xors with the const value, Bob xors with false
 		alice.XorConst(n.ID, n.L.ID, n.ConstVal)
 		bob.XorConst(n.ID, n.L.ID, false)
+	case AndConst:
+		alice.AndConst(n.ID, n.L.ID, n.ConstVal)
+		bob.AndConst(n.ID, n.L.ID, n.ConstVal)
 	case And:
 		if err := evalAndGate(alice, bob, n); err != nil {
 			return err
