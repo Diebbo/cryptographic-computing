@@ -42,10 +42,17 @@ func (p *Party) split(v bool) (sA, sB bool) {
 }
 
 // FinishMult is phase 2 — purely local, run once d and e are open.
-// addCrossTerm must be true for exactly one of the two parties.
+//
+// [z] = [w] xor (e AND [x]) xor (d AND [y]) xor (d AND e), but d AND e is a
+// *public* value (d and e are both open), so it must land in exactly one
+// party's share — otherwise it appears in both shares and cancels out when
+// they're XORed to reconstruct. Alice is the one who adds it; Bob does not.
 func (p *Party) FinishMult(t MultShare, d, e, xShare, yShare bool) bool {
-	// [z] = [w]+e[x]+d[y]−de
-	return t.w != (e && xShare) != (d && yShare) != (d && e)
+	z := t.w != (e && xShare) != (d && yShare)
+	if p.IsAlice {
+		z = z != (d && e)
+	}
+	return z
 }
 
 func (p *Party) Xor(ID, LeftID, RightID int) {

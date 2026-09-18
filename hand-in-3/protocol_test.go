@@ -249,7 +249,7 @@ func TestBeaverMultiplicationReconstructs(t *testing.T) {
 				zA := alice.FinishMult(tA, d, e, xA, yA)
 				zB := bob.FinishMult(tB, d, e, xB, yB)
 
-				if got, want := open(zA, zB), x != y; got != want {
+				if got, want := open(zA, zB), x && y; got != want {
 					t.Fatalf("x=%v y=%v trial %d: shares reconstruct to %v, want %v (d=%v e=%v)",
 						x, y, trial, got, want, dA != dB, eA != eB)
 				}

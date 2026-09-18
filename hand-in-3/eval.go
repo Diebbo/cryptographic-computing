@@ -105,8 +105,11 @@ func EvalNode(alice, bob *Party, n *Node) error {
 		debugNode(n, alice, bob)
 		return nil
 	case ConstGate:
+		// A public constant still has to be shared: only Alice holds the
+		// actual value, Bob holds false, so shareA xor shareB == ConstVal
+		// (mirrors how XorConst hands the constant to Alice alone).
 		alice.Const(n.ID, n.ConstVal)
-		bob.Const(n.ID, n.ConstVal)
+		bob.Const(n.ID, false)
 	case Xor:
 		alice.Xor(n.ID, n.L.ID, n.R.ID)
 		bob.Xor(n.ID, n.L.ID, n.R.ID)
