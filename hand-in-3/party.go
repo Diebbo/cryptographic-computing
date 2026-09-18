@@ -10,6 +10,7 @@ type Party struct {
 	IsAlice bool
 	shares  map[int]bool
 	rng     *rand.Rand
+	output  bool
 }
 
 func NewParty(name string, isAlice bool, seed int64) *Party {
@@ -68,9 +69,9 @@ func (p *Party) SendOutputShare(ID int) bool {
 }
 
 func (p *Party) SendOutput(ID int) bool {
-	return p.shares[ID]
+	return p.output
 }
 
 func (p *Party) ReceiveOutputShare(ID int, Value bool) {
-	p.shares[ID] = p.shares[ID] != Value
+	p.output = p.shares[ID] != Value
 }

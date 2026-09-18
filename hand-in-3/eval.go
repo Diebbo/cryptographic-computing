@@ -139,12 +139,13 @@ func evalAndGate(alice, bob *Party, n *Node) error {
 	// 2. precompute d and e
 	aD, aE := alice.PrepareMult(tripleAlice, alice.shares[n.L.ID], alice.shares[n.R.ID])
 	bD, bE := bob.PrepareMult(tripleBob, bob.shares[n.L.ID], bob.shares[n.R.ID])
-
+	d := aD != bD
+	e := aE != bE
 	debugAnd(alice, bob, n, tripleAlice, tripleBob, aD, bD, aE, bE)
 
 	// 3. secretly open d and e (in this simplified setting, just exchange them)
-	zA := alice.FinishMult(tripleAlice, aD, bE, alice.shares[n.L.ID], alice.shares[n.R.ID])
-	zB := bob.FinishMult(tripleBob, bD, aE, bob.shares[n.L.ID], bob.shares[n.R.ID])
+	zA := alice.FinishMult(tripleAlice, d, e, alice.shares[n.L.ID], alice.shares[n.R.ID])
+	zB := bob.FinishMult(tripleBob, d, e, bob.shares[n.L.ID], bob.shares[n.R.ID])
 
 	alice.shares[n.ID] = zA
 	bob.shares[n.ID] = zB
