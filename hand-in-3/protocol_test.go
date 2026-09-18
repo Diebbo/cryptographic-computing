@@ -41,7 +41,7 @@ func quiet(t *testing.T) {
 func mintInputs(seed int64, x, y []bool) (alice, bob *Party, xs, ys []*Node) {
 	ResetIDs()
 	initDealer(seed)
-	alice, bob = NewParty("Alice", true), NewParty("Bob", false)
+	alice, bob = NewParty("Alice", true, 11), NewParty("Bob", false, 22)
 
 	xs = make([]*Node, len(x))
 	ys = make([]*Node, len(y))
@@ -61,10 +61,14 @@ func mintInputs(seed int64, x, y []bool) (alice, bob *Party, xs, ys []*Node) {
 func sharedInputs(seed int64, x, y []bool) (alice, bob *Party, xs, ys []*Node) {
 	alice, bob, xs, ys = mintInputs(seed, x, y)
 	for i, bit := range x {
-		alice.shares[xs[i].ID], bob.shares[xs[i].ID] = dealer.split(bit)
+		a, b := alice.split(bit)
+		alice.shares[xs[i].ID] = a
+		bob.shares[xs[i].ID] = b
 	}
 	for j, bit := range y {
-		alice.shares[ys[j].ID], bob.shares[ys[j].ID] = dealer.split(bit)
+		b, a := bob.split(bit)
+		alice.shares[ys[j].ID] = a
+		bob.shares[ys[j].ID] = b
 	}
 	return alice, bob, xs, ys
 }
@@ -141,7 +145,7 @@ func TestConstGateIsShared(t *testing.T) {
 	quiet(t)
 	for _, v := range []bool{false, true} {
 		initDealer(11)
-		alice, bob := NewParty("Alice", true), NewParty("Bob", false)
+		alice, bob := NewParty("Alice", true, 11), NewParty("Bob", false, 22)
 		n := ConstNode(v)
 		if err := EvalNode(alice, bob, n); err != nil {
 			t.Fatalf("ConstNode(%v): EvalNode: %v", v, err)
@@ -220,19 +224,18 @@ func TestAndConstThroughTheProtocol(t *testing.T) {
 // Alice, false for Bob).
 func TestBeaverMultiplicationReconstructs(t *testing.T) {
 	quiet(t)
-	d := useDealer(99) // a source of random bits; the triple is built here
-	alice, bob := NewParty("Alice", true), NewParty("Bob", false)
+	alice, bob := NewParty("Alice", true, 99), NewParty("Bob", false, 100)
 
 	for _, x := range []bool{false, true} {
 		for _, y := range []bool{false, true} {
 			for trial := 0; trial < 20; trial++ {
-				xA, xB := d.split(x)
-				yA, yB := d.split(y)
+				xA, xB := alice.split(x)
+				yA, yB := bob.split(y)
 
 				// a properly random triple: u and v are random, w = u AND v
-				uA, uB := d.split(d.randBit())
-				vA, vB := d.split(d.randBit())
-				wA, wB := d.split((uA != uB) && (vA != vB))
+				uA, uB := alice.split(alice.randBit())
+				vA, vB := alice.split(alice.randBit())
+				wA, wB := alice.split((uA != uB) && (vA != vB))
 
 				tA := MultShare{u: uA, v: vA, w: wA}
 				tB := MultShare{u: uB, v: vB, w: wB}

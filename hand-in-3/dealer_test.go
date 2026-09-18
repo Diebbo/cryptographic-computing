@@ -12,12 +12,12 @@ func useDealer(seed int64) *Dealer {
 // split must be a XOR sharing: the two halves xor back to v, and neither half
 // may be predictable from v alone.
 func TestSplitReconstructsAndVaries(t *testing.T) {
-	d := useDealer(1)
+	alice := NewParty("Alice", true, 1)
 
 	sawTrue, sawFalse := false, false
 	for i := 0; i < 100; i++ {
 		for _, v := range []bool{false, true} {
-			sA, sB := d.split(v)
+			sA, sB := alice.split(v)
 			if (sA != sB) != v {
 				t.Fatalf("split(%v) = (%v, %v): shares xor to %v", v, sA, sB, sA != sB)
 			}

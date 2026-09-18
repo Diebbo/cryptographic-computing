@@ -4,8 +4,8 @@ import "fmt"
 
 func main() {
 	initDealer(42)
-	alice := NewParty("Alice", true)
-	bob := NewParty("Bob", true)
+	alice := NewParty("Alice", true, 57748)
+	bob := NewParty("Bob", true, 808)
 	aliceShares := []*Node{InputANode(0), InputANode(1), InputANode(2)}
 	bobShares := []*Node{InputANode(3), InputANode(4), InputANode(5)}
 

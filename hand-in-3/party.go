@@ -1,5 +1,7 @@
 package main
 
+import "math/rand"
+
 // Party is one of the two participants. Its shares map holds this party's
 // XOR-share of every wire it has evaluated, keyed by node ID — which doubles
 // as the memo that keeps EvalNode from walking the DAG twice.
@@ -7,13 +9,15 @@ type Party struct {
 	Name    string
 	IsAlice bool
 	shares  map[int]bool
+	rng     *rand.Rand
 }
 
-func NewParty(name string, isAlice bool) *Party {
+func NewParty(name string, isAlice bool, seed int64) *Party {
 	return &Party{
 		Name:    name,
 		IsAlice: isAlice,
 		shares:  make(map[int]bool),
+		rng:     rand.New(rand.NewSource(seed)),
 	}
 }
 
@@ -25,6 +29,15 @@ func (p *Party) PrepareMult(t MultShare, xShare, yShare bool) (d, e bool) {
 	d = t.u != xShare
 	e = t.v != yShare
 	return d, e
+}
+
+func (p *Party) randBit() bool {
+	return p.rng.Intn(2) == 1
+}
+
+func (p *Party) split(v bool) (sA, sB bool) {
+	mask := p.randBit()
+	return (mask != v), mask
 }
 
 // FinishMult is phase 2 — purely local, run once d and e are open.

@@ -17,14 +17,14 @@ func InitInputs(alice, bob *Party,
 	for i, bit := range x {
 		// NOTE: this operatio is supposed to be done by the player, for
 		// practicality we will assume the dealer is honest
-		a, b := dealer.split(bit)
+		a, b := alice.split(bit)
 		fmt.Printf("InitInputs: x[%d] = %v, Alice share = %v, Bob share = %v\n", i, bit, a, b)
 		alice.shares[xNodes[i].ID] = a
 		bob.shares[xNodes[i].ID] = b
 	}
 
 	for j, bit := range y {
-		a, b := dealer.split(bit)
+		b, a := bob.split(bit)
 		fmt.Printf("InitInputs: y[%d] = %v, Alice share = %v, Bob share = %v\n", j, bit, a, b)
 		alice.shares[yNodes[j].ID] = a
 		bob.shares[yNodes[j].ID] = b

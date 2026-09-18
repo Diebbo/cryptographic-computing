@@ -204,14 +204,3 @@ a or b = (a xor b) xor (a and b)
 ```
 
 Only the `and` in that expansion costs a round; everything else is local.
-
-## Beaver multiplication, for reference
-
-For XOR-shared bits, with `d = x xor a` and `e = y xor b` opened publicly:
-
-```
-z = x and y = c xor (a and e) xor (b and d) xor (d and e)
-```
-
-Each party computes its share from its own `(a, b, c)` share; the `d and e`
-term is public, so exactly one party adds it.
