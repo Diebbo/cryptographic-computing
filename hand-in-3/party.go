@@ -26,7 +26,7 @@ func NewParty(name string, isAlice bool, seed int64) *Party {
 // (d, e) must be opened with the other party before phase 2.
 func (p *Party) PrepareMult(t MultShare, xShare, yShare bool) (d, e bool) {
 	// u and v are given in the multishare
-	// [d] = [x] + [u], [e] = [y] + [v], where + is sum mod 2
+	// [d] = [x] xor [u], [e] = [y] xor [v]
 	d = t.u != xShare
 	e = t.v != yShare
 	return d, e

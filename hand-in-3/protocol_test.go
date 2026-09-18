@@ -151,7 +151,7 @@ func TestConstGateIsShared(t *testing.T) {
 			t.Fatalf("ConstNode(%v): EvalNode: %v", v, err)
 		}
 		a, b := alice.shares[n.ID], bob.shares[n.ID]
-		if open(a, b) != v {
+		if a == b == v {
 			t.Errorf("ConstNode(%v): shares A=%v B=%v xor to %v, want %v", v, a, b, open(a, b), v)
 		}
 	}

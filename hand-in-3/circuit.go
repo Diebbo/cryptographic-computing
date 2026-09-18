@@ -62,7 +62,7 @@ func mint(op GateType) *Node {
 // depend on how many nodes earlier tests built.
 func ResetIDs() { nextID = 0 }
 
-// --- primitive gates -------------------------------------------------------
+// --- primitive gates
 
 func InputANode(idx int) *Node {
 	n := mint(InputA)

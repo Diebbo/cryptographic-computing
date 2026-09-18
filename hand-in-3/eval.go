@@ -35,13 +35,6 @@ func InitInputs(alice, bob *Party,
 // evalPlain and never EvalNode, are unaffected by it.
 var DebugEval = false
 
-// debugNode reports one wire after it has been evaluated: the gate that produced
-// it, both parties' shares, and the value they reconstruct to (shareA xor
-// shareB — the value a correctly implemented "open" would yield).
-//
-// It also flags a node whose share is missing from a party's map. That case is
-// worth shouting about because a missing key reads back as false, i.e. it looks
-// like a perfectly good wire carrying 0.
 func debugNode(n *Node, alice, bob *Party) {
 	if !DebugEval {
 		return
@@ -156,20 +149,6 @@ func evalAndGate(alice, bob *Party, n *Node) error {
 	return nil
 }
 
-// debugAnd traces one Beaver multiplication: the triple the dealer handed out
-// (reconstructed from the two shares, which is what the protocol actually sees)
-// and the d and e the parties open from it.
-//
-// Two checks run alongside the printout, because both failures are silent
-// otherwise — the gate still produces two shares that look plausible:
-//
-//   - the triple must satisfy c == a AND b, or the Beaver identity is wrong;
-//   - the opened d and e must equal x xor a and y xor b, or a blind was applied
-//     to the wrong operand.
-//
-// It cannot check the property that actually breaks security here: a, b, c must
-// be *random*, so a triple reconstructed as a=b=c=1 on every call is a leak
-// (the opened d, e are then just x and y).
 func debugAnd(alice, bob *Party, n *Node, tA, tB MultShare, aD, bD, aE, bE bool) {
 	if !DebugEval {
 		return
@@ -192,13 +171,6 @@ func debugAnd(alice, bob *Party, n *Node, tA, tB MultShare, aD, bD, aE, bE bool)
 	}
 }
 
-// plaintextCompat is the ground truth for the target function: the AND over all
-// bit positions of OrNot(x_i, y_i). (x_i or not y_i) is false exactly when x_i
-// is false and y_i is true, so the conjunction holds iff no position has that
-// pattern.
-//
-// SPECS.md files this under eval.go next to EvalNode; it lives here for now
-// because nothing outside the tests calls it yet.
 func plaintextCompat(x, y []bool) bool {
 	if len(x) != len(y) {
 		panic("plaintextCompat: length mismatch")
