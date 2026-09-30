@@ -21,5 +21,5 @@ func main() {
 	}
 	alice.ReceiveOutputShare(outputID, bob.SendOutputShare(outputID))
 	outputA := alice.SendOutput(outputID)
-	fmt.Printf("Alice's share: %v\n", outputA)
+	fmt.Printf("Alice's output: %v\n", outputA)
 }
