@@ -1,0 +1,22 @@
+package main
+
+import "fmt"
+
+func main() {
+	alice := NewParty("Alice", true, 57748)
+	bob := NewParty("Bob", false, 808)
+	aliceShares := []*Node{InputANode(0), InputANode(1), InputANode(2)}
+	bobShares := []*Node{InputANode(3), InputANode(4), InputANode(5)}
+
+	aliceBits := []bool{true, true, true}
+	bobBits := []bool{false, false, false}
+
+	circuit := BuildCompatibility(aliceShares, bobShares)
+	outputID := circuit.ID
+	if err := EvalNode(alice, bob, circuit); err != nil {
+		panic(err)
+	}
+	alice.ReceiveOutputShare(outputID, bob.SendOutputShare(outputID))
+	outputA := alice.SendOutput(outputID)
+	fmt.Printf("Alice's output: %v\n", outputA)
+}
