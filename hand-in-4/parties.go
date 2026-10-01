@@ -4,7 +4,7 @@ import "math/rand"
 
 type Alice struct {
 	input   []bool
-	pks     []int
+	pks     [8]int
 	sk      int
 	rng     *rand.Rand
 	output  bool
@@ -13,7 +13,7 @@ type Alice struct {
 
 type Bob struct {
 	input   int
-	pks     []int
+	pks     [8]int
 	rng     *rand.Rand
 	pke *ElGamal
 }
