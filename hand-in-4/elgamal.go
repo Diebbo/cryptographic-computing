@@ -33,7 +33,7 @@ func generateSafePrime(bits int) (*big.Int, *big.Int) {
 	}
 }
 
-func initElGamal(n, seed int) *ElGamal {
+func initElGamal(n int) *ElGamal {
 	p, q := generateSafePrime(n)
 	var g *big.Int
 

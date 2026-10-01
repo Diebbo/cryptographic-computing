@@ -3,20 +3,24 @@ package main
 import "fmt"
 
 func main() {
-	alice := NewParty("Alice", true, 57748)
-	bob := NewParty("Bob", false, 808)
-	aliceShares := []*Node{InputANode(0), InputANode(1), InputANode(2)}
-	bobShares := []*Node{InputANode(3), InputANode(4), InputANode(5)}
 
-	aliceBits := []bool{true, true, true}
-	bobBits := []bool{false, false, false}
+	aliceBits := Bits{b1: true, b2: true, b3: true}
+	bobBits := Bits{b1: false, b2: false, b3: false}
 
-	circuit := BuildCompatibility(aliceShares, bobShares)
-	outputID := circuit.ID
-	if err := EvalNode(alice, bob, circuit); err != nil {
-		panic(err)
-	}
-	alice.ReceiveOutputShare(outputID, bob.SendOutputShare(outputID))
-	outputA := alice.SendOutput(outputID)
+	pke := initElGamal(1024)
+	var lambda int = 128
+
+	alice := initAlice(aliceBits, 57748, pke, lambda)
+	bob := initBob(bobBits, 808, pke, lambda)
+
+	alice.GeneratePks()
+	bob.ReceivePks(alice.SendPks())
+
+	messages := bob.GenerateMessages()
+	alice.ReceiveMessages(messages)
+
+	outputA := alice.GetOutput()
+	fmt.Printf("Alice's input: %v\n", aliceBits)
+	fmt.Printf("Bob's input: %v\n", bobBits)
 	fmt.Printf("Alice's output: %v\n", outputA)
 }
