@@ -62,7 +62,3 @@ func (e *ElGamal) Decrypt(sk int, c int) int {
 	r := rand.Int(p-1) + 1
 	return math.Pow(g, r) % p, (math.Pow(h, r) * m) % p
 }
-
-func (e *ElGamal) Retrieve() bool {
-	return p.rng.Intn(2) == 1
-}

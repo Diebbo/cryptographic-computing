@@ -8,34 +8,32 @@ type Alice struct {
 	sk      int
 	rng     *rand.Rand
 	output  bool
-	p, q, g int
+	pke *ElGamal
 }
 
 type Bob struct {
 	input   int
 	pks     []int
 	rng     *rand.Rand
-	p, q, g int
+	pke *ElGamal
 }
 
 func BoolsToInt(input []bool) int {
 	return int(bool[0]) + int(bool[1])*2 + int(bool[2])*4
 }
 
-func initAlice(input []bool, seed int64, p, q, g int) *Alice {
+func initAlice(input []bool, seed int64, pke *ElGamal) *Alice {
 	return &Alice{
 		input: BoolsToInt(input),
 		rng:   rand.New(rand.NewSource(seed)),
-		p: p,
-		q: q,
-		g: g,
+		pke:   pke,
 	}
 }
 
 func (a *Alice) Gen() (int, int) {
 	// random sk, retu sk, g^sk
-	sk := a.rng.Intn(a.q)
-	return sk, a.g ^ sk%a.p
+	sk := a.rng.Intn(a.pke.q)
+	return sk, a.pke.g ^ sk%a.pke.p
 }
 
 func (a *Alice) OGen() int {
