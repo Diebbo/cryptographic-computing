@@ -3,9 +3,8 @@ package main
 import "fmt"
 
 func main() {
-
-	aliceBits := Bits{b1: true, b2: true, b3: true}
-	bobBits := Bits{b1: false, b2: false, b3: false}
+	aliceBits := Bits{b1: true, b2: false, b3: true}
+	bobBits := Bits{b1: true, b2: false, b3: false}
 
 	pke := initElGamal(1024)
 	var lambda int = 128
