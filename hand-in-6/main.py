@@ -33,6 +33,18 @@ class Player:
 _lambda = 128  # security parameter
 LAMBDA_BYTES = _lambda // 8  # e.g. 16
 
+class Gate:
+    def __init__(self, input_wires, output_wire, operation, id):
+        self.input_wires = input_wires
+        self.output_wire = output_wire
+        self.operation = operation
+        self.id = id
+
+class Wire:
+    def __init__(self, i, k0, k1):
+        self.i = i
+        self.k0 = k0
+        self.k1 = k1
 
 def H(label_l: int, label_r: int, gate_id: int) -> int:
     data = (
@@ -43,6 +55,16 @@ def H(label_l: int, label_r: int, gate_id: int) -> int:
     digest = hashlib.sha256(data).digest()[:LAMBDA_BYTES]  # truncate to label size
     return int.from_bytes(digest, "big")
 
+def generate_ciphertexts():
+    ciphertexts = []
+    for a in range(2):  # Alice's bit
+        for b in range(2):  # Bob's bit
+            out_label = out[a & b]  # AND gate; swap for other gates
+            ct = H(wire_L[f"k{a}"], wire_R[f"k{b}"], i) ^ out_label
+            ciphertexts.append(ct)
+
+    random.shuffle(ciphertexts)
+    return ciphertexts
 
 class Garbler(Player):
     def garble_circuit_blood_compatibility(self, _lambda):
@@ -52,7 +74,7 @@ class Garbler(Player):
         """
         translation_list = []  # for each id we have the key i.e. swap = 1, no
         # swap = 0
-        C = {"wires": [], "nodes": []}
+        C = {"wires": [], "gates": []}
         wire_counter = 0
         node_counter = 0
         # 1. input wires: we generate for each wire two random values of
@@ -86,7 +108,7 @@ class Garbler(Player):
             ciphertexts = []
             for a in range(2):  # Alice's bit
                 for b in range(2):  # Bob's bit
-                    out_label = out[a & b]  # AND gate; swap for other gates
+                    out_label = out[a | b]  # OR gate; swap for other gates
                     ct = H(wire_L[f"k{a}"], wire_R[f"k{b}"], i) ^ out_label
                     ciphertexts.append(ct)
 
@@ -97,16 +119,16 @@ class Garbler(Player):
                 "input_wires": [f"w{i*2}", f"w{i*2+1}"],
                 "ciphertexts": ciphertexts,
                 "operation": "and",
-                "node_id": f"n{node_counter}",
+                "gate_id": f"n{node_counter}",
                 "output_wire": output_wire,
             }
-            C.nodes.append(node)
+            C.gates.append(node)
             C["wires"].append(output_wire)
-        # make the and of all of the nodes
-        output_nodes = []
-        for i in range(len(C["nodes"]) - 1):
-            wire_L = C["nodes"][i]["output_wire"]
-            wire_R = C["nodes"][i + 1]["output_wire"]
+        # make the and of all of the gates
+        output_gates = []
+        for i in range(len(C["gates"]) - 1):
+            wire_L = C["gates"][i]["output_wire"]
+            wire_R = C["gates"][i + 1]["output_wire"]
             k0, k1 = random.getrandbits(_lambda), random.getrandbits(_lambda)
             ciphertexts = []
             for j in range(2):  # alice's input bit
@@ -114,7 +136,7 @@ class Garbler(Player):
                     ciphertext = hashlib.sha256(
                         wire_L[f"k{j}"].k0.to_bytes(16, "big")
                         + wire_R[f"k{j}"].k0.to_bytes(16, "big")
-                    ) ^ (k0 + "0" * _lambda)
+                    ) ^ (k0 + b"\x00" * _lambda)
                     ciphertexts.append(ciphertext)
 
             # shuffle the ciphertexts to hide the order of the inputs
@@ -126,13 +148,13 @@ class Garbler(Player):
                 "input_wires": [f"w{i*2}", f"w{i*2+1}"],
                 "ciphertexts": ciphertexts,
                 "operation": "and",
-                "node_id": f"n{node_counter}",
+                "gate_id": f"n{node_counter}",
                 "output_wire": output_wire,
             }
-            output_nodes.append(node)
+            output_gates.append(node)
             C["wires"].append(output_wire)
 
-        C["nodes"] += output_nodes
+        C["gates"] += output_gates
         self.attributes["F"] = C
         return C
 
@@ -146,7 +168,7 @@ def oblivious_transfer_of_input_bits(Alice, Bob):
     """
     oblivious trasfer protocol between Alice and Bob, where Alice has a bit,
     and Bob has m0 and m1. Those m0 and m1 are the lables at position 0, 2, 4 of
-    the input nodes of the garblign circuit.
+    the input gates of the garblign circuit.
     """
 
     def OT(m0, m1, b):
