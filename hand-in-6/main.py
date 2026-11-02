@@ -30,7 +30,7 @@ class Player:
 
 
 class Garbler(Player):
-    def garble_circuit_blood_compatibility(self, lamda):
+    def garble_circuit_blood_compatibility(self, _lambda):
         """
         for each gate we have two input wires, one output, one id, 4
         ciphertexts, the operation.
@@ -45,7 +45,7 @@ class Garbler(Player):
         # also generate a random key for each wire.
         for _ in range(self.input_bits) * 2:
             # seamingly rando values of lambda bits
-            k0, k1 = random.getrandbits(lamda), random.getrandbits(lamda)
+            k0, k1 = random.getrandbits(_lambda), random.getrandbits(_lambda)
             swap = random.randint(0, 1)
             if swap == 1:
                 k0, k1 = k1, k0
@@ -64,15 +64,14 @@ class Garbler(Player):
             wire_L = C["wires"][i * 2]  # alice's input wire
             wire_R = C["wires"][i * 2 + 1]  # bob's input wire
             # compute all of the possible outputs and add the masking
-            k0, k1 = random.getrandbits(lamda), random.getrandbits(lamda)
+            k0, k1 = random.getrandbits(_lambda), random.getrandbits(_lambda)
             ciphertexts=[]
             for j in range(2):  # alice's input bit
                 for k in range(2):
                     #TODO: check this shit
                     ciphertext = (
                             hashlib.sha256(wire_L[f"k{j}"].k0.to_bytes(16, "big") +
-                            wire_R[f"k{j}"].k0.to_bytes(16, "big")) ^ (k0 ||
-                                                                       "0"*lamda)
+                            wire_R[f"k{j}"].k0.to_bytes(16, "big")) ^ (k0 + "0"*_lambda)
                             )
                     ciphertexts.append(ciphertext)
 
@@ -90,20 +89,18 @@ class Garbler(Player):
             }
             C.nodes.append(node)
             C["wires"].append(output_wire)
-
         # make the and of all of the nodes
         output_nodes = []
         for i in range(len(C["nodes"]) - 1):
             wire_L = C["nodes"][i]["output_wire"]
             wire_R = C["nodes"][i + 1]["output_wire"]
-            k0, k1 = random.getrandbits(lamda), random.getrandbits(lamda)
+            k0, k1 = random.getrandbits(_lambda), random.getrandbits(_lambda)
             ciphertexts=[]
             for j in range(2):  # alice's input bit
                 for k in range(2):
                     ciphertext = (
                             hashlib.sha256(wire_L[f"k{j}"].k0.to_bytes(16, "big") +
-                            wire_R[f"k{j}"].k0.to_bytes(16, "big")) ^ (k0 ||
-                                                                       "0"*lamda)
+                            wire_R[f"k{j}"].k0.to_bytes(16, "big")) ^ (k0 + "0"*_lambda)
                             )
                     ciphertexts.append(ciphertext)
 
