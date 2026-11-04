@@ -61,7 +61,7 @@ def InputWire():
     return Gate(False, None, None, None)  # Input wire with values [0, 1]
 
 
-def H(left, right, id) -> int:
+def H(left, right, id):
     digest = hashlib.sha256(left + right + int_to_bytes(id)).digest()[:2*LAMBDA_BYTES]  # truncate to two label size
     return digest
 
@@ -169,7 +169,7 @@ class Evaluator(Player):
                 c_b = c1
 
             label = elgamal.decrypt(sk, c_b)
-            alice_labels[id] = int_to_bytes(label)
+            alice_labels[id] = label.to_bytes(LAMBDA_BYTES, byteorder='big')
 
         self.alice_labels = alice_labels
 
