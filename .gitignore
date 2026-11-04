@@ -3,3 +3,4 @@
 *.zip
 /hand-in-3/bedoza-passive
 /hand-in-4/ot-passive
+*/__pycache__
