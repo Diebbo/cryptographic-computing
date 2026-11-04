@@ -1,7 +1,7 @@
 import hashlib
 import random
 import secrets
-
+import elgamal
 
 _lambda = 128  # security parameter
 LAMBDA_BYTES = _lambda // 8  # e.g. 16
@@ -12,6 +12,9 @@ def generate_labels(n = 2):
 
 def int_to_bytes(value: int) -> bytes:
     return value.to_bytes((value.bit_length() + 7) // 8, byteorder="big")
+
+def bytes_to_int(b):
+    return int.from_bytes(b, byteorder='big')
 
 def xor(a,b):
     return bytes(x ^ y for x, y in zip(a, b))
@@ -115,6 +118,8 @@ class Garbler(Player):
         self.garbled_circuit = garbled_circuit
         self.alice_inputs = alice_inputs
         self.bob_inputs = bob_inputs
+        alice_labels = {wire.id: wire.labels for wire in alice_inputs}
+        self.alice_labels = alice_labels
 
     def send_garbled_circuit(self):
         # Send the garbled circuit and the labels for Bob's input wires
@@ -123,10 +128,16 @@ class Garbler(Player):
         decoder = self.circuit.labels
         return (self.garbled_circuit, bob_labels, alice_ids, decoder)
 
-    def send_alice_labels(self):
-        # Send the labels for Alice's input wires based on her input bits
-        alice_labels = [(gate.id, gate.labels) for gate in self.alice_inputs]
-        return alice_labels
+    # def send_alice_labels(self):
+    #     # Send the labels for Alice's input wires based on her input bits
+    #     alice_labels = [(gate.id, gate.labels) for gate in self.alice_inputs]
+    #     return alice_labels
+
+    def encrypt_labels(self, id, pk_0, pk_1):
+        labels = self.alice_labels[id]
+        c0 = elgamal.encrypt(bytes_to_int(labels[0]), pk_0)
+        c1 = elgamal.encrypt(bytes_to_int(labels[1]), pk_1)
+        return c0, c1
 
 class Evaluator(Player):
     def receive_garbled_circuit(self, garbled_circuit, bob_labels, alice_ids, output_labels):
@@ -135,9 +146,38 @@ class Evaluator(Player):
         self.alice_ids = alice_ids
         self.output_labels = output_labels
 
-    # TODO: implemente OT 
-    def receive_alice_labels(self, alice_labels):
-        self.alice_labels = {id: labels[bit] for (id, labels), bit in zip(alice_labels, self.input_bits)}
+    # # TODO: implemente OT 
+    # def receive_alice_labels(self, alice_labels):
+    #     self.alice_labels = {id: labels[bit] for (id, labels), bit in zip(alice_labels, self.input_bits)}
+
+    def get_labels_OT(self, player):
+        alice_labels = {}
+        for id, bit in zip(self.alice_ids, self.input_bits):
+            # sample random sk
+            sk = secrets.randbelow(elgamal.q)
+            # generate pk_b Gen(sk), pk_1-b Ogen(r)
+            # Gen
+            h = pow(elgamal.g, sk, elgamal.p)
+            pk = (elgamal.g, h)
+            # OGen
+            s = secrets.randbelow(elgamal.p - 1) + 1
+            oh = pow(s, 2, elgamal.p)
+            opk = (elgamal.g, oh)
+            if bit == 0:
+                pk_0, pk_1 = pk, opk
+            else:
+                pk_0, pk_1 = opk, pk
+            
+            c0, c1 = player.encrypt_labels(id, pk_0, pk_1)
+            if bit == 0:
+                c_b = c0
+            else:
+                c_b = c1
+
+            label = elgamal.decrypt(sk, c_b)
+            alice_labels[id] = int_to_bytes(label)
+
+        self.alice_labels = alice_labels
 
     def eval(self):
         # Evaluate the garbled circuit using the received labels
@@ -194,7 +234,8 @@ if __name__ == "__main__":
 
     Alice.receive_garbled_circuit(*Bob.send_garbled_circuit())
 
-    Alice.receive_alice_labels(Bob.send_alice_labels())
+    # Alice.receive_alice_labels(Bob.send_alice_labels())
+    Alice.get_labels_OT(Bob)
 
     z = Alice.eval()
 
@@ -213,7 +254,7 @@ def test_circuit(a_input, b_input):
 
     Alice.receive_garbled_circuit(*Bob.send_garbled_circuit())
 
-    Alice.receive_alice_labels(Bob.send_alice_labels())
+    Alice.get_labels_OT(Bob)
     # runs
     z = Alice.eval()
     return z == test_inputs(a_input, b_input)
