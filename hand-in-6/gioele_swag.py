@@ -1,6 +1,7 @@
 import hashlib
 import random
 import secrets
+from itertools import product
 import elgamal
 
 _lambda = 128  # security parameter
@@ -18,6 +19,7 @@ def bytes_to_int(b):
 
 def xor(a,b):
     return bytes(x ^ y for x, y in zip(a, b))
+
 
 class Gate:
     counter_id = 0
@@ -63,6 +65,7 @@ def H(left, right, id) -> int:
     digest = hashlib.sha256(left + right + int_to_bytes(id)).digest()[:2*LAMBDA_BYTES]  # truncate to two label size
     return digest
 
+
 def generate_ciphertexts(gate):
     ciphertexts = []
     for a, left_label in zip(gate.left.values, gate.left.labels):  # Alice's bit
@@ -73,6 +76,7 @@ def generate_ciphertexts(gate):
 
     random.shuffle(ciphertexts)
     return ciphertexts
+
 
 def GarbleCircuit(gate):
     if gate.left is None and gate.right is None:
@@ -104,7 +108,6 @@ def BuildCompatibilityCircuit():
     return circuit, alice_inputs, bob_inputs
 
 
-
 class Player:
     def __init__(self, input_bits):
         self.input_bits = input_bits
@@ -128,11 +131,6 @@ class Garbler(Player):
         decoder = self.circuit.labels
         return (self.garbled_circuit, bob_labels, alice_ids, decoder)
 
-    # def send_alice_labels(self):
-    #     # Send the labels for Alice's input wires based on her input bits
-    #     alice_labels = [(gate.id, gate.labels) for gate in self.alice_inputs]
-    #     return alice_labels
-
     def encrypt_labels(self, id, pk_0, pk_1):
         labels = self.alice_labels[id]
         c0 = elgamal.encrypt(bytes_to_int(labels[0]), pk_0)
@@ -145,10 +143,6 @@ class Evaluator(Player):
         self.bob_labels = {id: label for id, label in bob_labels}
         self.alice_ids = alice_ids
         self.output_labels = output_labels
-
-    # # TODO: implemente OT 
-    # def receive_alice_labels(self, alice_labels):
-    #     self.alice_labels = {id: labels[bit] for (id, labels), bit in zip(alice_labels, self.input_bits)}
 
     def get_labels_OT(self, player):
         alice_labels = {}
@@ -209,39 +203,6 @@ class Evaluator(Player):
         return output
 
 
-# def oblivious_transfer_of_input_bits(Alice, Bob):
-#     """
-#     oblivious trasfer protocol between Alice and Bob, where Alice has a bit,
-#     and Bob has m0 and m1. Those m0 and m1 are the lables at position 0, 2, 4 of
-#     the input gates of the garblign circuit.
-#     """
-
-#     def OT(m0, m1, b):
-#         return m0 if b == 0 else m1
-
-#     for i in range(len(Alice.input_bits)):
-#         alice_bit = int(Alice.input_bits[i])
-#         alice_input_wire = Bob.attributes["F"]["wires"][i * 2]
-#         m0, m1 = alice_input_wire["k0"], alice_input_wire["k1"]
-#         Alice.attributes[f"alice_label_{i}"] = OT(m0, m1, alice_bit)
-
-
-if __name__ == "__main__":
-    Alice = Evaluator(input_bits=[1, 0, 0])
-    Bob = Garbler(input_bits=[1, 0, 0])
-
-    Bob.garble_circuit_blood_compatibility()  # F, ex, et, d
-
-    Alice.receive_garbled_circuit(*Bob.send_garbled_circuit())
-
-    # Alice.receive_alice_labels(Bob.send_alice_labels())
-    Alice.get_labels_OT(Bob)
-
-    z = Alice.eval()
-
-    print(f"The two blood types are {'compatible, i.e. B can donate to A' if
-          z == 1 else 'not compatible'}")
-
 def test_inputs(a, b):
     return (a[0] | (1 - b[0])) & (a[1] | (1 - b[1])) & (a[2] | (1 - b[2]))
 
@@ -255,14 +216,28 @@ def test_circuit(a_input, b_input):
     Alice.receive_garbled_circuit(*Bob.send_garbled_circuit())
 
     Alice.get_labels_OT(Bob)
-    # runs
     z = Alice.eval()
     return z == test_inputs(a_input, b_input)
 
 
-from itertools import product
+if __name__ == "__main__":
+    Alice = Evaluator(input_bits=[1, 0, 1])
+    Bob = Garbler(input_bits=[1, 0, 0])
 
-for a_input, b_input in product(product([0, 1], repeat=3), repeat=2):
-    assert test_circuit(a_input, b_input), f"Failed for inputs {a_input} and {b_input}"
+    Bob.garble_circuit_blood_compatibility()
 
-print("All tests passed!")
+    Alice.receive_garbled_circuit(*Bob.send_garbled_circuit())
+
+    Alice.get_labels_OT(Bob)
+
+    z = Alice.eval()
+
+    print(f"The two blood types are {'compatible, i.e. B can donate to A' if
+          z == 1 else 'not compatible'}")
+
+    for a_input, b_input in product(product([0, 1], repeat=3), repeat=2):
+        assert test_circuit(a_input, b_input), f"Failed for inputs {a_input} and {b_input}"
+
+    print("All tests passed!")
+
+
