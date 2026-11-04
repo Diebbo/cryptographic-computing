@@ -105,18 +105,6 @@ def BuildCompatibilityCircuit():
 class Player:
     def __init__(self, input_bits):
         self.input_bits = input_bits
-        self.attributes = {}
-
-    def recv(self, msg):
-        self.attributes.update(msg)
-
-    def send(self, msg):
-        return (
-            self.attributes[msg]
-            if isinstance(msg, str)
-            else [self.attributes[m] for m in msg]
-        )
-
 
 class Garbler(Player):
     def garble_circuit_blood_compatibility(self):
