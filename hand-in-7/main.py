@@ -1,15 +1,13 @@
 from secrets import randbits
 from itertools import product
 
-P_BITS = 2128
-Q_BITS = 8_500_000
-R_BITS =  56
-N = 2410
+parameters = {
+    "TOY": [26, 988, 290_000, 188],         # lambda = 42
+    "SMALL": [41, 1558, 1_600_000, 661],    # lambda = 52
+    "MEDIUM": [56, 2128, 8_500_000, 2410]   # lambda = 62
+}
 
-TOY_P_BITS = 988
-TOY_Q_BITS = 290_000
-TOY_R_BITS = 26
-TOY_N = 188
+R_BITS, P_BITS, Q_BITS, N = parameters["MEDIUM"]
 
 def generate_dhe_keys():
     p = randbits(P_BITS - 1) << 1 | 1
