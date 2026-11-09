@@ -8,7 +8,7 @@ N = 2410
 
 def generate_dhe_keys():
     p = randbits(P_BITS - 1) << 1 | 1
-    y = [p * randbits(Q_BITS) + randbits(R_BITS) for _ in range(N)]
+    y = [p * randbits(Q_BITS) + 2*randbits(R_BITS) for _ in range(N)]
     return (p, y)
 
 def encrypt(pk, m):
@@ -95,7 +95,7 @@ def test_protocol(a_input, b_input):
     Alice.receive_output(Bob.evaluate_blood_compatibility())
 
     z = Alice.decrypt_output()
-    
+
     return z == test_inputs(a_input, b_input)
 
 
