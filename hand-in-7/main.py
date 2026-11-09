@@ -8,7 +8,7 @@ N = 2410
 
 def generate_dhe_keys():
     p = randbits(P_BITS - 1) << 1 | 1
-    y = [p * randbits(Q_BITS) + 2*randbits(R_BITS) for _ in range(N)]
+    y = [p * randbits(Q_BITS) + 2 * randbits(R_BITS) for _ in range(N)]
     return (p, y)
 
 def encrypt(pk, m):
@@ -19,8 +19,6 @@ def encrypt(pk, m):
 
 def decrypt(sk, c):
     return (c % sk) % 2
-
-
 
 
 class Player:
@@ -42,11 +40,11 @@ class Player:
         return [encrypt(self.pk, i) for i in self.bits]
 
     def receive_encrypted_bits(self, bits):
-        self.encrypted_bits = bits
+        self.x_bits = bits
 
     def evaluate_blood_compatibility(self):
         y_bits = self.encrypt_bits()
-        x_bits = self.encrypted_bits
+        x_bits = self.x_bits
 
         def AND(c1, c2):
             return c1 * c2
@@ -83,8 +81,8 @@ def test_inputs(a, b):
 
 
 def test_protocol(a_input, b_input):
-    Alice = Player([1, 0, 1])
-    Bob = Player([0, 1, 1])
+    Alice = Player(a_input)
+    Bob = Player(b_input)
 
     Alice.init_dhe()
 

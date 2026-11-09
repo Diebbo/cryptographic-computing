@@ -8,10 +8,8 @@ N = 2410
 
 def generate_dhe_keys():
     p = randbits(P_BITS - 1) << 1 | 1
-    y = [p * randbits(Q_BITS) + 2*randbits(R_BITS) for _ in range(N)]
+    y = [p * randbits(Q_BITS) + 2 * randbits(R_BITS) for _ in range(N)]
     return (p, y)
-
-
 
 sk, pk = generate_dhe_keys()
 
@@ -54,4 +52,48 @@ def test_AND():
                if d3 != (a * b):
                     print("AND test failed with", a, b, d3)
 
+def test_XOR():
+     for a in [0,1]:
+          for b in [0,1]:
+               c1, c2 = encrypt(a), encrypt(b)
+               c3 = XOR(c1, c2)
+               d3 = decrypt(c3)
+               if d3 != (a ^ b):
+                    print("XOR test failed with", a, b, d3)
+
+def test_OR():
+     for a in [0,1]:
+          for b in [0,1]:
+               c1, c2 = encrypt(a), encrypt(b)
+               c3 = OR(c1, c2)
+               d3 = decrypt(c3)
+               if d3 != (a | b):
+                    print("OR test failed with", a, b, d3)
+
+def test_NOT():
+          for a in [0,1]:
+               c1 = encrypt(a)
+               c3 = NOT(c1)
+               d3 = decrypt(c3)
+               if d3 != (1 - a):
+                    print("NOT test failed with", a, d3)
+
+
 test_AND()
+test_XOR()
+test_OR()
+test_NOT()
+
+
+def ORNOT(c1, c2):
+            return OR(c1, NOT(c2))
+
+
+def test_ORNOT():
+     for a in [0,1]:
+          for b in [0,1]:
+               c1, c2 = encrypt(a), encrypt(b)
+               c3 = ORNOT(c1, c2)
+               d3 = decrypt(c3)
+               if d3 != (a | (1-b)):
+                    print("NOR test failed with", a, b, d3)
