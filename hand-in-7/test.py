@@ -78,17 +78,6 @@ def test_NOT():
                if d3 != (1 - a):
                     print("NOT test failed with", a, d3)
 
-
-test_AND()
-test_XOR()
-test_OR()
-test_NOT()
-
-
-def ORNOT(c1, c2):
-            return OR(c1, NOT(c2))
-
-
 def test_ORNOT():
      for a in [0,1]:
           for b in [0,1]:
@@ -97,3 +86,11 @@ def test_ORNOT():
                d3 = decrypt(c3)
                if d3 != (a | (1-b)):
                     print("NOR test failed with", a, b, d3)
+
+test_AND()
+test_XOR()
+test_OR()
+test_NOT()
+test_ORNOT()
+
+print("All tests passed")
